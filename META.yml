@@ -1,0 +1,19 @@
+abstract: DBIx::Class for Egg.
+author: Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
+build_requires: 
+  Test::More: 0
+  Test::Perl::Critic: 0
+  Test::Pod: 0
+distribution_type: module
+generated_by: Module::Install version 0.64
+license: perl
+name: Egg-Model-DBIC
+no_index: 
+  directory: 
+    - inc
+    - t
+requires: 
+  DBIx-Class: 0.07
+  DBIx::Class::Schema::Loader: 0.03
+  Egg::Release: 1.11
+version: 0.01

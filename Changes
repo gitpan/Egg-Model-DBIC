@@ -1,0 +1,5 @@
+Revision history for Perl extension .
+
+0.01  Sat Feb 24 12:49:05 2007
+	- original version; created by Egg::Helper::O::MakeMaker v0.04
+	   with module name Egg::Model::DBIC
