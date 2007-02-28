@@ -4,10 +4,13 @@ lib/Egg/Helper/M/DBIC.pm
 lib/Egg/Model/DBIC.pm
 lib/Egg/Model/DBIC/Moniker.pm
 lib/Egg/Model/DBIC/Schema.pm
+lib/Egg/Plugin/DBIC/Transaction.pm
+lib/Egg/Plugin/DBIC/TxnDo.pm
 Makefile.PL
 MANIFEST			This list of files
 META.yml
 README
 t/00_use.t
 t/01_dbic.t.manual
+t/02_plugin_method.t.manual
 t/89_pod.t

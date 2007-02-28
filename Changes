@@ -1,5 +1,8 @@
 Revision history for Perl extension .
 
+0.02  2007/02/28
+	- Egg::Plugin::DBIC::* was added.
+
 0.01  Sat Feb 24 12:49:05 2007
 	- original version; created by Egg::Helper::O::MakeMaker v0.04
 	   with module name Egg::Model::DBIC

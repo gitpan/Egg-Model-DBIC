@@ -3,14 +3,14 @@ package Egg::Helper::M::DBIC;
 # Copyright (C) 2007 Bee Flag, Corp, All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: DBIC.pm 255 2007-02-26 15:11:52Z lushe $
+# $Id: DBIC.pm 257 2007-02-28 13:09:44Z lushe $
 #
 use strict;
 use warnings;
 use base qw/Egg::Component/;
 use DBIx::Class::Schema::Loader qw/make_schema_at/;
 
-our $VERSION= '0.01';
+our $VERSION= '0.02';
 
 sub get_options {
 	my($class)= @_;
@@ -104,11 +104,6 @@ Please add 'schema_names' to the configuration.
 
 END_OF_INFO
 	}
-}
-sub _get_config {
-	my($self, $conf, $name)= @_;
-	for (@$conf) { return $_->[1] if $_->[0] eq $name }
-	return 0;
 }
 sub help_disp {
 	my $self= shift;

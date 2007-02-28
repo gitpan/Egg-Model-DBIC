@@ -3,19 +3,23 @@ package Egg::Model::DBIC;
 # Copyright (C) 2007 Bee Flag, Corp, All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: DBIC.pm 254 2007-02-26 15:08:15Z lushe $
+# $Id: DBIC.pm 258 2007-02-28 13:17:09Z lushe $
 #
 use strict;
 use warnings;
 use UNIVERSAL::require;
 use base qw/Egg::Model/;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 sub setup {
 	my($class, $e, $conf)= shift->SUPER::setup(@_);
 	my $project_name= $e->namespace;
 	my $names= $conf->{schema_names} || die q{ I want setup 'schema_names'. };
+	if ($e->debug && ! defined($ENV{DBIC_TRACE})) {
+		$ENV{DBIC_TRACE} = 1;
+		$ENV{DBIC_TRACE}.= "=$conf->{trace_file}" if $conf->{trace_file};
+	}
 	for my $name (ref($names) eq 'ARRAY' ? @$names: $names) {
 		my $schema_class= "$project_name\::Model::DBIC::$name";
 
