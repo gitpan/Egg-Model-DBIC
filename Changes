@@ -1,5 +1,12 @@
 Revision history for Perl extension .
 
+0.04  2007/03/06
+	- 'auto_collect' option is added.
+
+0.03  2007/03/02
+	- Bug fix for Egg::Plugin::DBIC::Transaction.
+	- fixed for Egg::Helper::M::DBIC.
+
 0.02  2007/02/28
 	- Egg::Plugin::DBIC::* was added.
 

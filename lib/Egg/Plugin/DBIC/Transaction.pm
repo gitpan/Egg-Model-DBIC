@@ -8,7 +8,7 @@ package Egg::Plugin::DBIC::Transaction;
 use strict;
 use warnings;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 sub setup {
 	my($e)= @_;
@@ -125,8 +125,9 @@ sub output_content {
 sub error_finalize {
 	my($e)= @_;
 	return $e->next::method if $e->{finished_transaction};
-	for my $name (@{$e->config->{__dbic_transactions}})
-	  { my $method= "$name\_rollback"; $e->$method }
+	for my $name (@{$e->config->{__dbic_transactions}}) {
+		eval "\$e->$name\_rollback";  ## no critic
+	}
 	$e->next::method;
 }
 

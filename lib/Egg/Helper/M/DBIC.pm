@@ -3,14 +3,14 @@ package Egg::Helper::M::DBIC;
 # Copyright (C) 2007 Bee Flag, Corp, All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: DBIC.pm 257 2007-02-28 13:09:44Z lushe $
+# $Id: DBIC.pm 267 2007-03-02 09:12:25Z lushe $
 #
 use strict;
 use warnings;
 use base qw/Egg::Component/;
 use DBIx::Class::Schema::Loader qw/make_schema_at/;
 
-our $VERSION= '0.02';
+our $VERSION= '0.03';
 
 sub get_options {
 	my($class)= @_;
@@ -38,7 +38,9 @@ sub new {
 	my $schema_path=
 	  "$g->{project_root}/lib/$g->{project_name}/Model/DBIC/$schema_name";
 
-	-e "$schema_path.pm" and die qq{ It already exists. : $schema_path.pm };
+##	-e "$schema_path.pm" and die qq{ It already exists. : $schema_path.pm };
+	my $backup= $self->_backup("$schema_path.pm");
+	   $backup= $self->_backup( $schema_path );
 
 	my $added_schema_code= <<END_OF_CODE;
 use base qw/Egg::Model::DBIC::Schema/;
@@ -88,8 +90,9 @@ END_OF_CODE
 		$self->remove_dir($schema_path);
 		Egg::Error->throw($err);
 	} else {
+		$backup= $backup ? "\n\n It backup. !! CONFIRMS !!\n": "";
 		print <<END_OF_INFO;
-... done.
+... done.$backup
 
 Please add 'schema_names' to the configuration.
 
@@ -104,6 +107,17 @@ Please add 'schema_names' to the configuration.
 
 END_OF_INFO
 	}
+}
+sub _backup {
+	my($self, $path)= @_;
+	return 0 unless -e $path;
+	for (reverse(2..5)) {
+		my $num= $_- 1;
+		-e "$path.backup$num" || next;
+		rename("$path.backup$num", "$path.backup$_");
+	}
+	rename($path, "$path.backup1");
+	1;
 }
 sub help_disp {
 	my $self= shift;

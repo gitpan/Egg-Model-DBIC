@@ -3,27 +3,41 @@ package Egg::Model::DBIC;
 # Copyright (C) 2007 Bee Flag, Corp, All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: DBIC.pm 258 2007-02-28 13:17:09Z lushe $
+# $Id: DBIC.pm 284 2007-03-05 22:41:56Z lushe $
 #
 use strict;
 use warnings;
 use UNIVERSAL::require;
 use base qw/Egg::Model/;
 
-our $VERSION = '0.02';
+our $VERSION = '0.05';
 
 sub setup {
 	my($class, $e, $conf)= shift->SUPER::setup(@_);
-	my $project_name= $e->namespace;
-	my $names= $conf->{schema_names} || die q{ I want setup 'schema_names'. };
 	if ($e->debug && ! defined($ENV{DBIC_TRACE})) {
 		$ENV{DBIC_TRACE} = 1;
 		$ENV{DBIC_TRACE}.= "=$conf->{trace_file}" if $conf->{trace_file};
 	}
+	my $project_name= $e->namespace;
+	my $names= $conf->{schema_names} || (
+	           $conf->{auto_collect} ? do {
+		my @names;
+		my $schema_dir= $e->path('lib', '/Model/DBIC');
+		for (<$schema_dir/*>) {  ## no critic
+			m{([^/]+)\.pm$} || next;
+			push @names, $1;
+		}
+		@names || die q{ Schema module is not found from '$schema_dir'. };
+		$e->debug_out('# + DBIC auto_collect : '. join(', ', @names));
+		\@names;
+	  }: die q{ I want setup 'schema_names' or 'auto_collect'. }
+	  );
 	for my $name (ref($names) eq 'ARRAY' ? @$names: $names) {
 		my $schema_class= "$project_name\::Model::DBIC::$name";
 
-		$schema_class->require or Egg::Error->throw($@);
+		my $model_name= lc($name);
+		$e->regist_model($model_name, $schema_class, 1);
+
 		my $conf= $schema_class->config;
 		$conf->{dsn}
 		  || Egg::Error->throw(qq{ I want setup '$schema_class'-> 'dsn'.  });
@@ -36,9 +50,6 @@ sub setup {
 		no warnings 'redefine';
 		*{"$schema_class\::new"}= $class->_mk_schema_closure
 		   ($schema_class, @{$conf}{qw{ dsn user password options }});
-
-		my $model_name= lc($name);
-		$e->regist_model($model_name, $schema_class, 1);
 
 		my $schema= $schema_class->new || Egg::Error->throw
 		     (qq{ Schema of '$schema_class' cannot be acquired. });
@@ -89,9 +100,11 @@ Egg::Model::DBIC - DBIx::Class for Egg.
 
 Configuration.
 
-  MODEL=> [
-    [ DBIC => { schema_names => [qw/ MyApp /] } ],
-    ],
+  MODEL=> [ [ DBIC => { schema_names => [qw/ MyApp /] } ] ],
+
+  Or
+
+  MODEL=> [ [ DBIC => { auto_collect=> 1 } ] ],
 
 Example of code.
 
@@ -127,9 +140,14 @@ Other modules are generated with this as for '/MYPROJECT/lib/Model/DBIC/MyDB'.
 
 Next, the setting of DBIC is added to the configuration.
 
-  MODEL=> [[ DBIC => { schema_names => [qw/ MyDB /] } ]],
+  MODEL=> [ [ DBIC => { schema_names => [qw/ MyDB /] } ] ],
 
 * The name of Schema made for schema_names is only specified.
+
+  MODEL=> [ [ DBIC => { auto_collect => 1 } ] ],
+
+* The module right under '/MYPROJECT/lib/MYPROJECT/Model/DBIC' is considered to
+  be Schema when doing so and it reads by the automatic operation.
 
 The object of Schema is acquired specifying everything by the small letter.
 
