@@ -7,7 +7,7 @@ author       'Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>';
 license      'perl';
 
 requires 'Egg::Release' => 1.11;
-requires 'DBIx-Class'   => 0.07;
+requires 'DBIx-Class'   => 0.07999;
 requires 'DBIx::Class::Schema::Loader' => 0.03;
 
 build_requires 'Test::More';

@@ -9,7 +9,7 @@ my $builder = Module::Build->new(
 
   requires => {
     'Egg::Release' => 1.11,
-    'DBIx-Class'   => 0.07,
+    'DBIx-Class'   => 0.07999,
     'DBIx::Class::Schema::Loader' => 0.03,
     'Test::More'   => 0,
     'Test::Pod'    => 0,

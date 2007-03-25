@@ -3,7 +3,7 @@ package Egg::Model::DBIC::Schema;
 # Copyright (C) 2007 Bee Flag, Corp, All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Schema.pm 254 2007-02-26 15:08:15Z lushe $
+# $Id: Schema.pm 49 2007-03-21 02:27:49Z lushe $
 #
 use strict;
 use warnings;

@@ -3,7 +3,7 @@ package Egg::Plugin::DBIC::Transaction;
 # Copyright (C) 2007 Bee Flag, Corp, All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: DBIC.pm 254 2007-02-26 15:08:15Z lushe $
+# $Id: Transaction.pm 63 2007-03-25 10:26:45Z lushe $
 #
 use strict;
 use warnings;
@@ -257,6 +257,29 @@ ROLLBACK does all passed Schema.
 
 ROLLBACK of all passed Schema is reserved.
 
+=head2 ...others.
+
+Do not call these methods from the code.
+
+=over 4
+
+=item setup
+
+Prior because of the start is prepared. 
+
+=item prepare
+
+Prior because of the project object generation is prepared.
+
+=item output_content
+
+When this method call is called from Engine, it commits it.
+
+=item error_finalize
+
+It is a handler to do the rollback when the error occurred.
+
+=back
 
 =head1 SEE ALSO
 

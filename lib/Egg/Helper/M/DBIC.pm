@@ -3,7 +3,7 @@ package Egg::Helper::M::DBIC;
 # Copyright (C) 2007 Bee Flag, Corp, All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: DBIC.pm 267 2007-03-02 09:12:25Z lushe $
+# $Id: DBIC.pm 63 2007-03-25 10:26:45Z lushe $
 #
 use strict;
 use warnings;
@@ -177,6 +177,25 @@ Egg::Helper::M::DBIC - Helper for Egg::Model::DBIC.
 =head2 -u Data base user.
 
 =head2 -p Data base password.
+
+=head1 METHODS
+
+=over 4
+
+=item new
+
+It initiates the processing.
+This method is called from Egg::Helper.
+
+=item get_options
+
+The option to receive with Getopt::Easy is set.
+
+=item help_disp
+
+Help of use is output.
+
+=back
 
 =head1 SEE ALSO
 

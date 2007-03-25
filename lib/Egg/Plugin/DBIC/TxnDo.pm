@@ -3,7 +3,7 @@ package Egg::Plugin::DBIC::TxnDo;
 # Copyright (C) 2007 Bee Flag, Corp, All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: DBIC.pm 254 2007-02-26 15:08:15Z lushe $
+# $Id: TxnDo.pm 63 2007-03-25 10:26:45Z lushe $
 #
 use strict;
 use warnings;
@@ -92,6 +92,15 @@ L<DBIx::Class> : L<http://search.cpan.org/dist/DBIx-Class/lib/DBIx/Class/Manual/
 * The method of '*_txn_do' of Schema to which AutoCommit is invalid is not
   generated. The error occurs if it calls it.
   Even if AutoCommit is invalid, other methods can be used.
+
+=over 4
+
+=item setup
+
+It is a method for the start preparation that is called from the controller of 
+the project. * Do not call it from the application.
+
+=back
 
 =head2 [schema_name]_txn_do ([CODE_REF])
 

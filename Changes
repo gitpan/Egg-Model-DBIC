@@ -1,5 +1,8 @@
 Revision history for Perl extension .
 
+0.06  2007/03/25
+	- Maintenance release for Pod coverage.
+
 0.04  2007/03/06
 	- 'auto_collect' option is added.
 

@@ -3,7 +3,7 @@ package Egg::Model::DBIC::Moniker;
 # Copyright (C) 2007 Bee Flag, Corp, All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Moniker.pm 257 2007-02-28 13:09:44Z lushe $
+# $Id: Moniker.pm 49 2007-03-21 02:27:49Z lushe $
 #
 use strict;
 use warnings;

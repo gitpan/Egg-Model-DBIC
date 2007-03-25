@@ -3,14 +3,14 @@ package Egg::Model::DBIC;
 # Copyright (C) 2007 Bee Flag, Corp, All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: DBIC.pm 284 2007-03-05 22:41:56Z lushe $
+# $Id: DBIC.pm 63 2007-03-25 10:26:45Z lushe $
 #
 use strict;
 use warnings;
 use UNIVERSAL::require;
 use base qw/Egg::Model/;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 sub setup {
 	my($class, $e, $conf)= shift->SUPER::setup(@_);
@@ -169,6 +169,15 @@ Please succeed to Egg::Model::DBIC::Moniker and make it.
 * DBIx::Class has been succeeded to in Egg::Model::DBIC::Moniker.
 
 Please refer in the module generated with the helper for the sample.
+
+=over 4
+
+=item setup
+
+It is a method for the start preparation that is called from the controller of 
+the project. * Do not call it from the application.
+
+=back
 
 =head1 SEE ALSO
 
