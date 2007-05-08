@@ -1,70 +1,204 @@
 package Egg::Plugin::DBIC::Transaction;
 #
-# Copyright (C) 2007 Bee Flag, Corp, All Rights Reserved.
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: Transaction.pm 63 2007-03-25 10:26:45Z lushe $
+# $Id: Transaction.pm 103 2007-05-08 00:20:39Z lushe $
 #
+
+=head1 NAME
+
+Egg::Plugin::DBIC::Transaction - Plugin that supports transaction of DBIC.
+
+=head1 SYNOPSIS
+
+  use Egg qw/ DBIC::Transaction /;
+  
+  __PACKAGE__->egg_startup(
+    ...
+    .....
+    MODEL => [ [ DBIC => {} ] ],
+    );
+
+  # Object (MODEL) of MySchema is acquired.
+  my $model= $e->myschema_schema;
+  
+  # dbh of MySchema is acquired.
+  my $dbh= $e->myschema_dbh;
+  
+  # An arbitrary table object is acquired.
+  my $table= $e->myschema_table('any_table');
+  
+  # MySchema is commit.
+  $e->myschema_commit;
+  
+  # MySchema is rollback.
+  $e->myschema_rollback;
+  
+  # After all processing is completed, MySchema is commit.
+  $e->myschema_commit_ok(1);
+  
+  # It is a rollback after all processing is completed as for MySchema.
+  $e->myschema_rollback_ok(1);
+
+=head1 DESCRIPTION
+
+It is a plugin that adds an automation of the transaction management by
+L<Egg::Model::DBIC> and some convenient accessors.
+
+Interrupt concerning the transaction is done by the call from following Egg.
+
+=over 4
+
+=item * _prepare (Beginning of processing)
+
+Begin of all Schema loaded into L<Egg::Model::DBIC> is done.
+However, when AutoCommit is effective, nothing is done.
+
+'begin' need not be done on the application side specifying it.
+
+However, there might be a thing that the overhead cannot be disregarded
+according to the number of loaded Schema.
+As for measures concerning this, the place today is not included.
+
+=item * _finalize_result (End of processing)
+
+Commit or rollback of all Schema loaded into L<Egg::Model::DBIC> is done.
+However, when 'AutoCommit' is effective, nothing is done.
+
+* [schema]_commit_ok is only effective to doing commit.
+  'rollback' is done whenever it is invalid.
+
+=item * _finalize_error (Exception is generated)
+
+[schema]_rollback_ok is made effective.
+
+=back
+
+* Because this plugin uses the method of the same to L<Egg::Plugin::DBI::Transaction>
+  name, it is not possible to use it at the same time.
+
+=cut
 use strict;
 use warnings;
+use Carp qw/croak/;
 
-our $VERSION = '0.02';
+our $VERSION = '2.00';
 
-sub setup {
+=head1 METHODS
+
+=cut
+sub _setup {
 	my($e)= @_;
-	my $dbic = $e->model('DBIC') || die q{ Please build in MODEL DBIC. };
+	my $dbic= $e->model('DBIC') || die q{ Please build in MODEL DBIC. };
 	my $names= $dbic->config->{schema_names};
 	my(@list, %auto_commit);
+
 	no strict 'refs';  ## no critic
 	no warnings 'redefine';
+
 	for my $name (ref($names) eq 'ARRAY' ? @$names: $names) {
 		$name= lc($name) || next;
 		my $schema= $e->model($name)
-		   || Egg::Error->throw(qq{ $name Model cannot be acquired. });
-		$auto_commit{$name}= 1 if $schema->storage->dbh->{AutoCommit};
+		   || die qq{ $name Model cannot be acquired. };
+		$auto_commit{$name}= $schema->storage->dbh->{AutoCommit} || 0;
 		push @list, $name;
 
-	## schema Method.
-		my $smethod= "$name\_schema";
-		*{__PACKAGE__."::$smethod"}=
-		   sub { $_[0]->{$smethod} ||= $_[0]->model($name) };
+=head2 [schema_name]_schema
 
-	## dbh Method.
-		my $dmethod= "$name\_dbh";
-		*{__PACKAGE__."::$dmethod"}=
-		   sub { $_[0]->{$dmethod} ||= $_[0]->$smethod->storage->txn_dbh };
+The object of Schema is returned.
 
-	## table Method.
-		*{__PACKAGE__."::$name\_table"}= sub {
-			my $egg= shift;
-			my $table= lc(shift)
-			   || Egg::Error->throw(q{ I want source name. });
-			$egg->model("$name\:$table");
+schema_name is always a small letter.
+
+It is the same as $e-E<gt>model([SCHEMA_NAME]).
+
+  my $model= $e->myschema_schema;
+
+=cut
+		my $s_method= "${name}_schema";
+		*{__PACKAGE__."::$s_method"}=
+		   sub { $_[0]->{$s_method} ||= $_[0]->model($name) };
+
+=head2 [schema_name]_dbh
+
+The data base handler of Schema is returned.
+
+It is the same as $e-E<gt>model([SCHEMA_NAME])->storage->dbh.
+
+  my $dbh= $e->myschema_dbh;
+
+=cut
+		my $d_method= "${name}_dbh";
+		*{__PACKAGE__."::$d_method"}=
+		   sub { $_[0]->{$d_method} ||= $_[0]->$s_method->storage->dbh };
+
+=head2 [schema_name]_table ( [TABLE_NAME] )
+
+The table object that belongs to Schema is returned.
+
+$e-E<gt>model([SCHEMA_NAME])->resultset([TABLE_NAME]) or
+ $e-E<gt>model([SCHEMA_NAME]:[TABLE_NAME]) It is the same.
+
+  my $table= $e->myschema_table('hoge');
+
+=cut
+		*{__PACKAGE__."::${name}_table"}= sub {
+			my $egg  = shift;
+			my $table= lc(shift) || croak q{ I want source name. };
+			$egg->{"dbic_${name}:$table"} ||= $egg->model("${name}:$table");
 		  };
 
-	## begin Method.
-		*{__PACKAGE__."::$name\_begin"}= $auto_commit{$name}
+=head2 [schema_name]_begin
+
+If the transaction of schema_name is begun and $e-E<gt>debug is effective,
+it reports to STDERR.
+
+* This method need not be called from the application specifying it.
+
+=cut
+		*{__PACKAGE__."::${name}_begin"}= $auto_commit{$name}
 		  ? sub { 1 }: sub {
-			$_[0]->$smethod->txn_begin;
-			$_[0]->debug_out("# + DBIC Transaction Start.");
+			$_[0]->$s_method->txn_begin;
+			$_[0]->debug_out("# + DBIC '$name' Transaction Start.");
 			};
 
-	## commit Method.
-		*{__PACKAGE__."::$name\_commit"}= $auto_commit{$name}
+=head2 [schema_name]_commit
+
+If schema_name is 'commit' at once and $e-E<gt>debug is effective,
+it reports to STDERR.
+
+  $e->myschema_commit;
+
+=cut
+		*{__PACKAGE__."::${name}_commit"}= $auto_commit{$name}
 		  ? sub { 1 }: sub {
-			$_[0]->$smethod->txn_commit;
-			$_[0]->debug_out("# + DBIC Transaction commit.");
+			$_[0]->$s_method->txn_commit;
+			$_[0]->debug_out("# + DBIC '$name' Transaction commit.");
 			};
 
-	## rollback Method.
-		*{__PACKAGE__."::$name\_rollback"}= $auto_commit{$name}
+=head2 [schema_name]_rollback
+
+If it goes at once in the rollback of schema_name and $e-E<gt>debug is
+effective, it reports to STDERR.
+
+  $e->myschema_rollback;
+
+=cut
+		*{__PACKAGE__."::${name}_rollback"}= $auto_commit{$name}
 		  ? sub { 0 }: sub {
-			$_[0]->$smethod->txn_rollback;
-			$_[0]->debug_out("# + DBIC Transaction rollback.");
+			$_[0]->$s_method->txn_rollback;
+			$_[0]->debug_out("# + DBIC '$name' Transaction rollback.");
 			};
 
-	## commit_ok Method.
-		*{__PACKAGE__."::$name\_commit_ok"}= $auto_commit{$name}
+=head2 [schema_name]_commit_ok ( [BOOL] )
+
+After all processing ends, schema_name is 'commit' if an effective value is set.
+
+An opposite at the same time value is set in [schema_name]_rollback_ok.
+
+  $e->myschema_commit_ok(1);
+
+=cut
+		*{__PACKAGE__."::${name}_commit_ok"}= $auto_commit{$name}
 		  ? sub { $_[1] || 0 }: sub {
 			my $egg= shift;
 			return ($egg->{dbic_commit_ok}{$name} || 0) unless @_;
@@ -76,8 +210,17 @@ sub setup {
 			$egg->{dbic_commit_ok}{$name};
 		  };
 
-	## rollback_ok Method.
-		*{__PACKAGE__."::$name\_rollback_ok"}= $auto_commit{$name}
+=head2 [schema_name]_rollback_ok ( [BOOL] );
+
+After all processing ends, the rollback of schema_name is done if an effective
+value is set.
+
+An opposite at the same time value is set in [schema_name]_commit_ok.
+
+  $e->myschema_rollback_ok(1);
+
+=cut
+		*{__PACKAGE__."::${name}_rollback_ok"}= $auto_commit{$name}
 		  ? sub { $_[1] || 0 }: sub {
 			my $egg= shift;
 			return ($egg->{dbic_rollback_ok}{$name} || 0) unless @_;
@@ -91,204 +234,81 @@ sub setup {
 
 	}
 
-	for my $a ([qw{ commit 1 }],
-	  [qw{ commit_ok 1 }], [qw{ rollback 1 }], [qw{ rollback_ok 1 }]) {
-		*{__PACKAGE__."::$a->[0]"}= sub {
+=head2 commit ( [SCHEMA_LIST] )
+
+All [SCHEMA_LIST] is 'commit'.
+
+  $e->commit(qw/ MySchema AnySchema /);
+
+=head2 commit_ok ( [SCHEMA_LIST] )
+
+All 'commit_ok' of [SCHEMA_LIST] is made effective.
+
+  $e->commit_ok(qw/ MySchema AnySchema /);
+
+=head2 rollback ( [SCHEMA_LIST] )
+
+[SCHEMA_LIST] is done and all 'rollback' is done.
+
+  $e->rollback(qw/ MySchema AnySchema /);
+
+=head2 rollback_ok ( [SCHEMA_LIST] )
+
+All rollback_ok of [SCHEMA_LIST] is made effective. 
+
+  $e->rollback_ok(qw/ MySchema AnySchema /);
+
+=cut
+	for my $accessor (qw/ commit commit_ok rollback rollback_ok /) {
+
+		*{__PACKAGE__."::$accessor"}= sub {
 			my $egg= shift;
-			@_ || Egg::Error->throw('I want schema names.');
-			for (@_) { my $method= lc($_). "_$a->[0]"; $egg->$method(1) }
-			return $a->[1];
+			&{ lc($_). "_$_" }($egg, 1) for @_;
+			1;
 		  };
+
 	}
-	$e->config->{__dbic_transactions}= \@list;
-	$e->config->{__dbic_auto_commit} = \%auto_commit;
+
+	$e->global->{dbic_transactions}= \@list;
+	$e->global->{dbic_auto_commit} = \%auto_commit;
 	$e->next::method;
 }
-sub prepare {
+
+{
+	no strict 'refs';  ## no critic
+	sub _prepare {
+		my($e)= @_;
+		$e->{dbic_commit_ok}  = {};
+		$e->{dbic_rollback_ok}= {};
+		&{"$_\_begin"}($e) for @{$e->global->{dbic_transactions}};
+		$e->next::method;
+	}
+	sub _finalize_error {
+		my($e)= @_;
+		&{"$_\_rollback_ok"}($e, 1) for @{$e->global->{dbic_transactions}};
+		$e->next::method;
+	}
+  };
+
+sub _finalize_result {
 	my($e)= @_;
-	$e->{dbic_commit_ok}  = {};
-	$e->{dbic_rollback_ok}= {};
-	for my $name (@{$e->config->{__dbic_transactions}})
-	  { my $method= "$name\_begin"; $e->$method }
-	$e->next::method;
-}
-sub output_content {
-	my($e)= @_;
-	for my $name (@{$e->config->{__dbic_transactions}}) {
+	for my $name (@{$e->global->{dbic_transactions}}) {
 		my $method= $e->{dbic_commit_ok}{$name}
-		   ? "$name\_commit": "$name\_rollback";
+		                ? "${name}_commit": "${name}_rollback";
 		$e->$method;
 	}
-	$e->{finished_transaction}= 1;
 	$e->next::method;
 }
-sub error_finalize {
-	my($e)= @_;
-	return $e->next::method if $e->{finished_transaction};
-	for my $name (@{$e->config->{__dbic_transactions}}) {
-		eval "\$e->$name\_rollback";  ## no critic
-	}
-	$e->next::method;
-}
-
-1;
-
-__END__
-
-=head1 NAME
-
-Egg::Plugin::DBIC::Transaction - The method related to the transaction etc. of DBIC for Egg is offered.
-
-=head1 SYNOPSIS
-
-  my $dbh= $e->myapp_dbh;                    # <= $e->model('myApp')->storage->txn_dbh;
-  
-  my $schema= $e->myapp_schema;              # <= $e->model('myApp');
-  
-  my $table = $e->myapp_table('myMoniker');  # <= $e->model('myApp:myMoniker');
-  
-  $e->myapp_commit;                          # <= $e->model('myApp')->storage->txn_commit;
-  
-  # Two or more Schema is settled and commit is done.
-  $e->commit(qw/ myApp remoteApp /);
-  
-  # When the processing of Egg ends, commit is done.
-  $e->myapp_commit_ok(1);
-  
-  # Commit_ok of two or more Schema is settled and set.
-  $e->commit_ok(qw/ myApp remoteApp /);
-  
-  $e->myapp_rollback;                        # <= $e->model('myApp')->storage->txn_rollback;
-  
-  # Two or more Schema is settled and rollback is done.
-  $e->rollback(qw/ myApp remoteApp /);
-  
-  # When the processing of Egg ends, rollback is done.
-  $e->myapp_rollback_ok(1);
-  
-  # Rollback_ok of two or more Schema is settled and set.
-  $e->rollback_ok(qw/ myApp remoteApp /);
-
-=head1 DESCRIPTION
-
-This plug-in offers a convenient accessor to treat DBIC, and semi-automates
-the processing of the transaction.
-
-BEGIN is always done at the start of processing of Egg and the transaction is 
-begun. And, when processing is ended, COMMIT is done and the transaction is
-ended if ROLLBACK or commit_ok is effective.
-
-As a result, it comes do not to have to consider BEGIN and ROLLBACK, etc. on
-the application side.
-
-* Please make commit_ok effective in the application when you do COMMIT.
-
-L<DBIx::Class> : L<http://search.cpan.org/dist/DBIx-Class/lib/DBIx/Class/Manual/DocMap.pod>.
-
-=head1 METHODS
-
-* The error doesn't occur even when AutoCommit is invalidly used.
-  Moreover, the method doesn't do anything even if called.
-  However, the method for the data base handler and the model acquisition
-  functions.
-
-=head2 [schema_name]_begin.
-
-The transaction of Schema is begun.
-
-Because this is called by the automatic operation when processing begins, it is
-not necessary to call from the application.
-
-=head2 [schema_name]_dbh
-
-The data base handler of Schema is returned.
-
-* It is the same as $e->model([schema_name])->storage->txn_dbh.
-
-=head2 [schema_name]_schema
-
-The object of Schema is returned.
-
-* It is the same as $e->model([schema_name]).
-
-=head2 [schema_name]_table ([source_name])
-
-The table object in Schema is returned.
-
-* It is the same as $e->model([schema_name])->resultset([source_name])
-  and $e->model([schema_name]:[source_name]).
-
-=head2 [schema_name]_commit
-
-COMMIT of Schema is issued.
-
-* It is the same as $e->model([schema_name])->storage->txn_commit.
-
-=head2 [schema_name]_rollback
-
-ROLLBACK of Schema is issued.
-
-* It is the same as $e->model([schema_name])->storage->txn_rollback.
-
-=head2 [schema_name]_commit_ok([Boolean]);
-
-It is reserved to do COMMIT when the transaction is ended.
-
-* 0 If is passed, it becomes a cancellation.
-
-=head2 [schema_name]_rollback_ok([Boolean]);
-
-Because it tries to issue ROLLBACK whenever the transaction is ended, this 
-method need not usually be called. * To make the syntax comprehensible.
-
-=head2 commit ([schema_list])
-
-COMMIT does all passed Schema.
-
-=head2 commit_ok ([schema_list])
-
-COMMIT of all passed Schema is reserved.
-
-=head2 rollback ([schema_list])
-
-ROLLBACK does all passed Schema.
-
-=head2 rollback_ok ([schema_list])
-
-ROLLBACK of all passed Schema is reserved.
-
-=head2 ...others.
-
-Do not call these methods from the code.
-
-=over 4
-
-=item setup
-
-Prior because of the start is prepared. 
-
-=item prepare
-
-Prior because of the project object generation is prepared.
-
-=item output_content
-
-When this method call is called from Engine, it commits it.
-
-=item error_finalize
-
-It is a handler to do the rollback when the error occurred.
-
-=back
 
 =head1 SEE ALSO
 
+L<DBIx::Class>,
 L<Egg::Model::DBIC>,
 L<Egg::Release>,
 
 =head1 AUTHOR
 
-Masatoshi Mizuno, E<lt>lusheE<64>cpan.orgE<gt>
+Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 
 =head1 COPYRIGHT
 
@@ -299,3 +319,5 @@ it under the same terms as Perl itself, either Perl version 5.8.6 or,
 at your option, any later version of Perl 5 you may have available.
 
 =cut
+
+1;
