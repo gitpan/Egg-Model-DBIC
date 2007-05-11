@@ -83,10 +83,11 @@ use warnings;
 use UNIVERSAL::require;
 use base qw/Egg::Model/;
 
-our $VERSION = '2.00';
+our $VERSION = '2.01';
 
 sub _setup {
 	my($class, $e, $conf)= shift->SUPER::_setup(@_);
+
 	if ($e->debug && ! defined($ENV{DBIC_TRACE})) {
 		$ENV{DBIC_TRACE} = 1;
 		$ENV{DBIC_TRACE}.= "=$conf->{trace_file}" if $conf->{trace_file};

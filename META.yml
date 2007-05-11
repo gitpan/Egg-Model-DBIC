@@ -17,4 +17,4 @@ requires:
   DBIx-Class: 0.07999
   DBIx::Class::Schema::Loader: 0.03
   Egg::Release: 2
-version: 2.00
+version: 2.01

@@ -16,3 +16,5 @@ t/01_dbic.t
 t/02_helper.t
 t/03_plugin.t
 t/89_pod.t
+t/98_perlcritic.t
+t/99_pod_coverage.t
