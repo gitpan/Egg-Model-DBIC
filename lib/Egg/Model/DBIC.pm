@@ -2,8 +2,14 @@ package Egg::Model::DBIC;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: DBIC.pm 103 2007-05-08 00:20:39Z lushe $
+# $Id: DBIC.pm 176 2007-06-27 05:56:06Z lushe $
 #
+use strict;
+use warnings;
+use UNIVERSAL::require;
+use base qw/Egg::Model/;
+
+our $VERSION = '2.02';
 
 =head1 NAME
 
@@ -78,13 +84,6 @@ When the object is acquired, it only has to operate it L<DBIx::Class> originally
 Please refer to the document of L<DBIx::Class> for details.
 
 =cut
-use strict;
-use warnings;
-use UNIVERSAL::require;
-use base qw/Egg::Model/;
-
-our $VERSION = '2.01';
-
 sub _setup {
 	my($class, $e, $conf)= shift->SUPER::_setup(@_);
 

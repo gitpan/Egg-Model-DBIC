@@ -2,7 +2,7 @@ package Egg::Helper::Model::DBIC;
 #
 # Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
 #
-# $Id: DBIC.pm 104 2007-05-08 00:26:24Z lushe $
+# $Id: DBIC.pm 176 2007-06-27 05:56:06Z lushe $
 #
 
 =head1 NAME

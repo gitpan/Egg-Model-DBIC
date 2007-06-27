@@ -1,5 +1,5 @@
 
-use Test::More qw/no_plan/;
+use Test::More tests=> 3;
 use Egg::Helper::VirtualTest;
 use DBI;
 
@@ -9,7 +9,7 @@ my $psw   = $ENV{EGG_RDBMS_PASSWORD}   || "";
 my $table = $ENV{EGG_RDBMS_TEST_TABLE} || 'egg_release_dbi_test_table';
 
 SKIP: {
-skip q{ Data base is not setup. } unless ($dsn and $uid);
+skip q{ Data base is not setup. }, 3 unless ($dsn and $uid);
 
 my $t= Egg::Helper::VirtualTest->new( prepare => {} );
 my $g= $t->global;
