@@ -9,7 +9,7 @@ use warnings;
 use UNIVERSAL::require;
 use base qw/Egg::Model/;
 
-our $VERSION = '2.02';
+our $VERSION = '2.03';
 
 =head1 NAME
 

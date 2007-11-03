@@ -1,6 +1,6 @@
 ---
 name: Egg-Model-DBIC
-version: 2.02
+version: 2.03
 author:
   - 'Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>'
 abstract: DBIx::Class for Egg Model.
@@ -21,7 +21,7 @@ provides:
     version: 2.00
   Egg::Model::DBIC:
     file: lib/Egg/Model/DBIC.pm
-    version: 2.02
+    version: 2.03
   Egg::Model::DBIC::Schema:
     file: lib/Egg/Model/DBIC/Schema.pm
     version: 2.00
